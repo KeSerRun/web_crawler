@@ -1,0 +1,2 @@
+drissionpage==4.1.1.4
+flatdict==4.1.0
