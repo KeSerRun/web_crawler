@@ -76,6 +76,10 @@ def get_newbrowser()->Chromium:
         co.set_local_port(config.PORT)  # 设置调试端口，默认9222
     co.headless(config.HEADLESS)      # 设置无头模式
     co.no_imgs(config.NO_IMGS)        # 禁用图片
+    # 设置浏览器路径，如果 config.browser_path 不为 None，则使用指定路径，否则使用默认路径
+    if config.browser_path:
+        co.set_browser_path(config.browser_path)
+    logger.debug(f'浏览器路径设置为: {config.browser_path if config.browser_path else "默认路径"}')
     # 设置用户代理
     co.set_user_agent(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
