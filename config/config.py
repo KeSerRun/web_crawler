@@ -10,7 +10,7 @@ class Config:
         self.NO_IMGS = False             # 是否禁用图片
         self.PORT = 9222                 # 浏览器调试端口,默认9222, 'auto'表示自动选择空闲端口
         self.NEED_LOGIN = True           # 是否需要登录
-        self.browser_path = None         # 浏览器路径，None表示使用默认路径
+        self.browser_path = r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'         # 浏览器路径，None表示使用默认路径
 
         '''定义需要创建的目录列表'''
         self.directories = [            # 定义需要创建的目录列表
@@ -22,7 +22,7 @@ class Config:
         '''定义搜索关键词列表'''
         self.search_keys = {
             'goods': ['笔记本', '手机', '自行车', '显卡', '耳机'],  # 定义搜索关键词列表，这里是示例，可以根据需要修改
-            'page': range(1,21)         # 定义页数范围，这里是1到20页，页数必须是最后一个键
+            'page': range(1,21)         # 定义页数范围，这里是1到20页
         }
 
 config = Config()
