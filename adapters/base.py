@@ -215,6 +215,16 @@ class BaseAdapter:
     # 解析数据包方法，子类必须实现
     def parse_data(self, data):
         raise NotImplementedError('子类必须实现 parse_data 方法')
+    
+    # 抓包方法，监听数据包并执行数据包触发方法，可以在子类中重写以适应不同的抓包需求
+    @handle_exception
+    def listen_and_action(self):
+        # 监听数据包并执行数据包触发方法
+        self.tab.listen.start(self.pk_url)
+        self.action()  # 执行数据包触发方法
+        data = self.tab.listen.wait(timeout=5)  # 抓取数据包
+        self.tab.listen.stop()  # 停止监听
+        return data
 
     @handle_exception
     def __enter_to_search(self):
@@ -245,13 +255,7 @@ class BaseAdapter:
                 # 执行搜索
                 self.perform_search(keys)
             # 监听数据包并执行数据包触发方法
-            self.tab.listen.start(self.pk_url)
-            # 执行数据包触发方法
-            self.action()  
-            # 抓取数据包
-            data = self.tab.listen.wait(timeout=5)
-            # 停止监听
-            self.tab.listen.stop()
+            data = self.listen_and_action()
             # 解析数据包
             data = self.parse_data(data.response.body)
             # 保存数据
