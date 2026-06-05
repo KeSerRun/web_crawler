@@ -210,7 +210,7 @@ class BaseAdapter:
     
     # 数据包的触发方法，子类必须实现
     def action(self):
-        raise NotImplementedError('子类必须实现 action 方法')
+        raise NotImplementedError('子类必须实现 action 或 listen_and_action 方法')
 
     # 解析数据包方法，子类必须实现
     def parse_data(self, data):
@@ -237,6 +237,8 @@ class BaseAdapter:
     # 执行方法，包含整个爬取流程
     @handle_exception
     def __execute(self, search_keys: dict):
+        # 将当前页数置为1,确保从第一页开始爬取
+        self.status['page'] = 1
         # 创建搜索键生成器
         gen = search_key_generator(search_keys, self.status)
         # 迭代生成搜索键组合并执行搜索
@@ -256,10 +258,18 @@ class BaseAdapter:
                 self.perform_search(keys)
             # 监听数据包并执行数据包触发方法
             data = self.listen_and_action()
-            # 解析数据包
-            data = self.parse_data(data.response.body)
-            # 保存数据
-            save_data(data, f'{self.name}.csv')
+            # 如果成功抓取到数据包，解析数据并保存数据
+            if data:
+                try:
+                    # 解析数据包
+                    data = self.parse_data(data.response.body)
+                except Exception as e:
+                    logger.error(f'解析数据包时发生错误: {e}')
+                    continue  # 跳过当前搜索键组合，继续下一个组合
+                # 保存数据
+                save_data(data, f'{self.name}.csv')
+            else:
+                logger.warning('未捕获到数据包，跳过保存数据步骤')
 
     # 公开的执行方法
     def run(self, search_keys: dict):

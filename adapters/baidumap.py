@@ -35,7 +35,7 @@ class BaiduMapAdapter(BaseAdapter):
             self.tab.refresh()  # 刷新页面以触发数据包
         else:
             # 执行翻页操作，这里是示例，实际需要根据页面结构进行调整
-            next_button = self.tab.ele('xpath://a[contains(@tid, "toNextPage")]')
+            next_button = self.tab.ele('xpath://a[contains(@tid, "toNextPage") and @onclick]')
             if next_button:
                 next_button.click()
             else:
@@ -47,22 +47,21 @@ class BaiduMapAdapter(BaseAdapter):
         self.tab.listen.start(self.pk_url,res_type='XHR')
         self.action()  # 执行数据包触发方法
         # 跳过第一个数据包，因为它通常是页面加载时的请求，可能不包含我们需要的数据
-        self.tab.listen.wait(timeout=5)  # 抓取数据包
-        data = self.tab.listen.wait(timeout=5)  # 抓取数据包
+        if self.status['page'] <= 1:
+            self.tab.listen.wait(timeout=3)  # 等待第一个数据包
+        data = self.tab.listen.wait(timeout=3)  # 抓取数据包
         self.tab.listen.stop()  # 停止监听
         return data
 
     @handle_exception
     def parse_data(self, data):
         # from rich import print
-        # # 打印数据包，帮助调试和分析数据结构
-        # data = data['content'][0]
-        # import json
-        # with open('data.json', 'w', encoding='utf-8') as f:
-        #     json.dump(data,f, ensure_ascii=False, indent=4)
+        # 打印数据包，帮助调试和分析数据结构
+        import json
+        with open('data.json', 'w', encoding='utf-8') as f:
+            json.dump(data['content'][0],f, ensure_ascii=False, indent=4)
         # exit()
         # 解析数据包，这里是示例，实际需要根据数据包结构进行调整
-
         data_list = []
         for data in data['content']:
             item_data = data
@@ -71,16 +70,13 @@ class BaiduMapAdapter(BaseAdapter):
                 extra_info = {
                     'business_time': item_data.get('business_time',{}).get('data',[{}])[0].get('business_time_text',{}).get('common', ''),
                     'price': item_data.get('ext',{}).get('detail_info',{}).get('bubble_info',{}).get('title',{}).get('text', ''),
-                    'score': item_data.get('ext',{}).get('detail_info',{}).get('bubble_info',{}).get('sub_title',{}).get('text', ''),
-                    'phone': item_data.get('ext',{}).get('detail_info',{}).get('phone',''),
                 }
             elif self.keys['class'] == '酒店':
+                # 尝试解析营业时间和价格信息，如果数据结构发生变化可能会导致解析失败
                 extra_info = {
                     'business_time': item_data.get('ext',{}).get('detail_info',{}).get('vs_content',{}).get('basic_facts',{}).get('hotel_detail',{}).get('basic_info',{}).get('checkin_policy', '')\
                                     + '，' + item_data.get('ext',{}).get('detail_info',{}).get('vs_content',{}).get('basic_facts',{}).get('hotel_detail',{}).get('basic_info',{}).get('checkout_policy', ''),
-                    'price': item_data.get('ext',{}).get('detail_info',{}).get('hotel_ext',{}).get('singleroom',{}).get('realprice', ''),
-                    'score': item_data.get('ext',{}).get('detail_info',{}).get('overall_rating', ''),
-                    'phone': item_data.get('ext',{}).get('detail_info',{}).get('phone',''),
+                    'price': item_data.get('ext',{}).get('detail_info',{}).get('wise_low_price',''),
                 }
             parsed_data = {
                 # 将当前搜索键组合添加到解析后的数据中
@@ -91,6 +87,8 @@ class BaiduMapAdapter(BaseAdapter):
                 'di_tag': item_data.get('di_tag', ''),
                 'name': item_data.get('name', ''),
                 'coordinates': f"{item_data.get('x','')},{item_data.get('y','')}",
+                'score': item_data.get('ext',{}).get('detail_info',{}).get('overall_rating', ''),
+                'phone': item_data.get('ext',{}).get('detail_info',{}).get('phone',''),
                 # 添加根据分类解析的额外信息
                 **extra_info 
                 # ...
